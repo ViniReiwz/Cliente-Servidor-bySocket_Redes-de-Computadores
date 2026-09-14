@@ -28,3 +28,4 @@ clean:
 	rm -f $(BIN)/*
 	rm -f $(OBJ)/*
 
+fresh: clean all
