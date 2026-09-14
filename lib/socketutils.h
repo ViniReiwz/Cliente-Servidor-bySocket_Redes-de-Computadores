@@ -11,15 +11,17 @@
 #define CLI_SIDE 2      // ou do cliente
 
 /*
-    Cria um socket para TCP, o nomeia (faz o bind) e retorna seu descritor.
-    O socket se conecta à `INADDR_ANY` pela porta definida em `CNCT_PORT`
+    Cria um socket para TCP, o nomeia, faz o bind (no lado do servidor) e retorna seu descritor.
+    O socket se conecta à `INADDR_ANY` pela porta definida em `CNCT_PORT`, no lado do servidor
 
     params:
         const int side ->> Lado da conexão (`SRV_SIDE` ou `CLI_SIDE`)
+        const int socketFD ->> Descritor do socket
 
     returns:
-        int socketFD ->> Descritor do socket já nomeado
+        strcut sockaddr_in sockAddr ->> Estrutura com as informações do socket |
+        NULL caso aja algum erro na criação do mesmo
 */
-int createTCPSocket(const int side);
+struct sockaddr_in* createSocketAddrIPV4(const int side, const int socketFD);
 
 #endif
