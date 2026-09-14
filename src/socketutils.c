@@ -12,25 +12,25 @@ char* inputServerIP()
     char* srv_ip = (char*)calloc(INET_ADDRSTRLEN,sizeof(char));
     fgets(srv_ip, INET_ADDRSTRLEN, stdin);
     srv_ip[strcspn(srv_ip,"\n")] = '\0';
-    if(DEBUG){printf("%s", srv_ip);}
+    if(DEBUG){printf("IP registrado: \n\n%s\n\n", srv_ip);}
 
     return srv_ip;
 }
 
 /*
     Cria um socket para TCP, o nomeia (faz o bind) e retorna seu descritor.
-    O socket se conecta à `INADDR_ANY` pela porta definida em `CNCT_PORT`
+    O socket se conecta à `INADDR_ANY` pela porta definida em `CNCT_PORT`, no lado do servidor
 
     params:
         const int side ->> Lado da conexão (`SRV_SIDE` ou `CLI_SIDE`)
+        int socketFD ->> Descritor do socket
 
     returns:
-        int socketFD ->> Descritor do socket já nomeado
+        strcut sockaddr_in* sockAddr ->> Estrutura com as informações do socket |
+        NULL caso aja algum erro na criação do mesmo
 */
-int createTCPSocket(const int side)
+struct sockaddr_in* createSocketAddrIPV4(const int side, const int socketFD)
 {
-
-    int socketFD =  socket(AF_INET, SOCK_STREAM, 0);                      // Cria uma socket preparada para o TCP (família AF_INET e do tipo STREAM)
 
     // "Nomeia" o socket (o atrela à um endereço)
     /*
@@ -39,51 +39,50 @@ int createTCPSocket(const int side)
             .sin_family ->> Especifica a família de protocolos (mesma do Socket criado anteriormente)
             .sin_port ->> Porta à qual o socket deve se conectar (mesma que o servidor)
     */
-    struct sockaddr_in sockAddr;
+    struct sockaddr_in* sockAddr = (struct sockaddr_in*)calloc(1, sizeof(struct sockaddr_in));
+
+    sockAddr->sin_family = AF_INET;
+    sockAddr->sin_port = htons(CNCT_PORT);
     
-    // Atua de acordo com o lado da conexão (Servidor ou cliente)
     switch (side)
     {
-    case SRV_SIDE:
+        case SRV_SIDE:
         {
-            
-            sockAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+            sockAddr->sin_addr.s_addr = htonl(INADDR_ANY);
+
+            int bindRes = bind(socketFD, (struct sockaddr *)sockAddr, sizeof(struct sockaddr_in));
+            if(bindRes == -1)
+            {
+                perror("bind");
+                printf("Erro ao fazer o bind no socket do servidor !\n");
+                return NULL;
+            }
+
             break;
         }
-    
-    case CLI_SIDE:
+        
+        case CLI_SIDE:
         {
             printf("Digite o IP do servidor: ");
             char* srv_ip = inputServerIP();
-            sockAddr.sin_addr.s_addr = htonl(*srv_ip);
+            int res = inet_pton(AF_INET, srv_ip, &sockAddr->sin_addr.s_addr);
             free(srv_ip);
+            if(res <= 0)
+            {
+                printf("Erro ao instanciar a socket para o cliente (endereço de IP inválido).\n");
+                return NULL;
+            }
+
             break;
         }
-    
-    default:
-        {
-            printf("Especifique qual o lado da conexão (SRV_SIDE ou CLI_SIDE deste socket)");
-            return -1;
-        }
-    }
-    
-    sockAddr.sin_family = AF_INET;
-    sockAddr.sin_port = htons(CNCT_PORT);
 
-    int bindRes = bind(socketFD, (struct sockaddr*)&sockAddr, sizeof(sockAddr));  // Liga o socket criado à seu endereço
+        default:
+            {
+                printf("Especifique o lado da conexão!!\n");
+                return NULL;
+            }
+            
+    }    
 
-    if(DEBUG)
-    {
-        if(bindRes == -1)
-        {
-            printf("Ocorreu um erro ao fazer o bind do socket");
-            return -1;
-        }
-        else
-        {
-            printf("Bind ocorreu sem problemas");
-        }
-    }
-
-    return socketFD;
+    return sockAddr;
 }
