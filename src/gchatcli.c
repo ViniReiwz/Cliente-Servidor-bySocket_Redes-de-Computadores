@@ -16,17 +16,25 @@ int main()
         return -1;
     }
 
-    // Envia uma mensagem teste para saber se a conexão foi feita corretamente.
-    char* message = "Mensagem teste !\0";
-    
-   int bytesSend =  send(cliSockFD, message, strlen(message), 0);
-   if(bytesSend == -1){perror("send");}
+    while(1)
+    {
+        // Envia uma mensagem teste para saber se a conexão foi feita corretamente.
+        char message[1024];
+        fgets(message, 1023, stdin);
+        message[strcspn(message,"\n")] = '\0';  
+        
+        int bytesSend =  send(cliSockFD, message, strlen(message), 0);
+        if(bytesSend == -1){perror("send");}
+
+        if(strcmp(message,"exit") == 0){break;}
 
 
-    // Recebe e exibe a mensagem de resposta teste do servidor
-    char buffer[1024];
-    recv(cliSockFD, buffer, sizeof(buffer),0);
-    printf("Resposta ->> %s\n", buffer);
+
+        // Recebe e exibe a mensagem de resposta teste do servidor
+        char buffer[1024];
+        recv(cliSockFD, buffer, sizeof(buffer),0);
+        printf("Resposta ->> %s\n", buffer);
+    }
 
     close(cliSockFD);
     free(cliSockAddr);

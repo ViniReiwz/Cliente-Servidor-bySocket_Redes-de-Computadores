@@ -21,14 +21,19 @@ int main()
     int cliSockFD = accept(srvSockFD, (struct sockaddr*)cliSockAddr, &addrSize);
     printf("\nConexão aceita !\n");
 
-    char buffer[1024];
-    int bytesRec = recv(cliSockFD, buffer, 1023, 0);
-    buffer[bytesRec] = '\0';
-    printf("Mensagem recebida ->> %s\n", buffer);
-    
-    char* response = "Resposta a mensagem de teste !!\0";
-    int bytesSend = send(cliSockFD, response, strlen(response), 0);
-    if(bytesSend == -1){perror("send");}
+    while (1)
+    {
+        char buffer[1024];
+        int bytesRec = recv(cliSockFD, buffer, 1023, 0);
+        buffer[bytesRec] = '\0';
+        printf("Mensagem recebida ->> %s\n", buffer);
+
+        if(strcmp(buffer,"exit") == 0){break;}
+
+        char* response = "Resposta a mensagem de teste !!\0";
+        int bytesSend = send(cliSockFD, response, strlen(response), 0);
+        if(bytesSend == -1){perror("send");}
+    }
 
     close(cliSockFD);
     close(srvSockFD);
