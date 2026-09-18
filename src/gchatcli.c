@@ -29,7 +29,6 @@ int main()
         if(strcmp(message,"exit") == 0){break;}
 
 
-
         // Recebe e exibe a mensagem de resposta teste do servidor
         char buffer[1024];
         recv(cliSockFD, buffer, sizeof(buffer),0);
