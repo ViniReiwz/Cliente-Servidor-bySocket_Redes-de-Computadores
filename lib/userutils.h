@@ -7,12 +7,7 @@ typedef struct _user
     int id;
 }USER;
 
-typedef struct _messsage 
-{
-    USER* user;
-    char* message;
-    int to_id;
-}MESSAGE;
+
 
 typedef struct _user_node
 {

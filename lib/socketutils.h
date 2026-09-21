@@ -13,6 +13,13 @@
 
 #define MSG_SIZE 1024
 
+typedef struct _messsage 
+{
+    USER* user;
+    char* message;
+    int to_id;
+}MESSAGE;
+
 /*
     Cria um socket para TCP, o nomeia, faz o bind (no lado do servidor) e retorna seu descritor.
     O socket se conecta à `INADDR_ANY` pela porta definida em `CNCT_PORT`, no lado do servidor
