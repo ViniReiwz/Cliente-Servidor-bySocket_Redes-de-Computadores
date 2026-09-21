@@ -11,6 +11,7 @@ typedef struct _messsage
 {
     USER* user;
     char* message;
+    int to_id;
 }MESSAGE;
 
 typedef struct _user_node
@@ -26,5 +27,9 @@ typedef struct _user_tree
     USER_NODE* root;
     int num_users;
 }USER_TREE;
+
+void destroyUser(USER* user);
+
+USER* createUser(const char* name);
 
 #endif
