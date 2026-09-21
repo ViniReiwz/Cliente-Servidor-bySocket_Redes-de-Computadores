@@ -127,27 +127,6 @@ void insertUser(USER_TREE* tree, USER* user)
 }
 
 /**
- * Procura um usuário por seu nome
- *  params:
- *      USER_TREE* tree ->> Árvore à realizar a busca
- *      const char* user_name ->> Nome do usuário
- *  returns:
- *      USER* ->> Ponteiro para o usuário encontrado (ou NULL caso não)
- */
-USER* searchUser(USER_TREE* tree, const char* user_name)
-{
-    USER_NODE* user_node =  searchUserNode(tree, user_name);
-    if(user_node != NULL){ return user_node->user; }
-    else { return NULL; }
-}
-
-// void removeUser(USER_TREE* tree, const int user_id)
-// {
-//     USER_NODE* user_node = searchUserNode(tree, user_id);
-//     // TODO - Implementar remoção de usuário
-// }
-
-/**
  * Busca o nó de usuário dentro da árvore, e o retorna caso encotrar
  *  params:
  *      USER_TREE* tree ->> Árvore a realizar a busca
@@ -167,3 +146,24 @@ USER_NODE* searchUserNode(USER_TREE* tree, const char* user_name)
 
     return NULL;
 }
+
+/**
+ * Procura um usuário por seu nome
+ *  params:
+ *      USER_TREE* tree ->> Árvore à realizar a busca
+ *      const char* user_name ->> Nome do usuário
+ *  returns:
+ *      USER* ->> Ponteiro para o usuário encontrado (ou NULL caso não)
+ */
+USER* searchUser(USER_TREE* tree, const char* user_name)
+{
+    USER_NODE* user_node =  searchUserNode(tree, user_name);
+    if(user_node != NULL){ return user_node->user; }
+    else { return NULL; }
+}
+
+// void removeUser(USER_TREE* tree, const int user_id)
+// {
+//     USER_NODE* user_node = searchUserNode(tree, user_id);
+//     // TODO - Implementar remoção de usuário
+// }
