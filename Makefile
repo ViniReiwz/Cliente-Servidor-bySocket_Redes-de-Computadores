@@ -13,7 +13,7 @@ create_dirs:
 
 lib: create_dirs
 	gcc -c $(SRC)/socketutils.c -I $(LIB) -o $(OBJ)/socketutils.o
-	gcc -c $(SRC)/usertutils.c -I $(LIB) -o $(OBJ)/userutils.o
+	gcc -c $(SRC)/userutils.c -I $(LIB) -o $(OBJ)/userutils.o
 
 bin: lib
 	gcc $(SRC)/gchatsrv.c $(OBJ)/*.o -I $(LIB) -o $(BIN)/gchatsrv
