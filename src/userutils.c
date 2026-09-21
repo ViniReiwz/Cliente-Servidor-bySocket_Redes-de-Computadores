@@ -1,6 +1,13 @@
 #include "gchat.h"
 
-USER* createUser(const char name)
+/*
+ * Cria um usuário
+ *   params:
+ *       const char name ->> Nome do usuário
+ *   returns:
+ *       USER* ->> Ponteiro para estrutura de usuário com id -1 e nome passado como parâmetro
+ */
+USER* createUser(const char* name)
 {
     USER* user = (USER*)calloc(1,sizeof(USER));
     user->id = -1;
@@ -8,6 +15,13 @@ USER* createUser(const char name)
     return user;
 }
 
+/**
+ * Cria um nó de usuário, utilizado para salvá-lo na árvore de usuários
+ *  params:
+ *      USER* user ->> Usuário a ser salvo
+ *  returns:
+ *      USER_NODE* ->> Ponteiro para estrutura do tipo USER_NODE (Nó de árvore binária)
+ */
 USER_NODE* createUserNode(USER* user)
 {
     USER_NODE* user_node = (USER_NODE*)calloc(1,sizeof(USER_NODE));
@@ -15,6 +29,13 @@ USER_NODE* createUserNode(USER* user)
     user_node->user = user;
 }
 
+/**
+ * Aloca memória para uma árvore binária de nós do tipo USER_NODE (contém o número de usuários 
+ * e a raíz da árvore)
+ * 
+ * returns:
+ *  USER_TREE* ->> Ponteiro para a estrutura da árvore binária, com raiz NULL e num_users 0
+ */
 USER_TREE* createUserTree()
 {
     USER_TREE* tree = (USER_TREE*)calloc(1,sizeof(USER_TREE));
@@ -24,12 +45,22 @@ USER_TREE* createUserTree()
     return tree;
 }
 
+/**
+ * Libera a memória alocada para um usuário
+ *  params:
+ *      USER* user ->> Usuário a ser 'deletado'
+ */
 void destroyUser(USER* user)
 {
     free(user->name);
     free(user);
 }
 
+/**
+ * Libera a memória de toda uma árvore de usuários
+ *  params:
+ *      USER_NONDE* root ->> Raíz da árvore
+ */
 void destroyTree(USER_NODE* root)
 {
     if(root == NULL){return;}
@@ -41,6 +72,12 @@ void destroyTree(USER_NODE* root)
     free(root);
 }
 
+/**
+ * Insere um usuário na árvore de usuários
+ *  params:
+ *      USER_TREE* tree ->> Árvore em que o usuário será inserido
+ *      USER* user ->> Usuário a ser inserido
+ */
 void insertUser(USER_TREE* tree, USER* user)
 {
     if(tree->root == NULL)
@@ -55,12 +92,12 @@ void insertUser(USER_TREE* tree, USER* user)
         while(p!=NULL)
         {
             ant = p;
-            if(user->id < p->user->id)
+            if(strcmp(user->name,p->user->name) < 0)
             {
                 p = p->left;
                 wasLeft = 1;
             }
-            else if(user->id > p->user->id)
+            else if(strcmp(user->name,p->user->name) > 0)
             {
                 p = p->right;
                 wasLeft = 0;
@@ -89,25 +126,43 @@ void insertUser(USER_TREE* tree, USER* user)
     user->id = tree->num_users - 1;
 }
 
-USER* searchUserById(USER_TREE* tree, const int user_id)
+/**
+ * Procura um usuário por seu nome
+ *  params:
+ *      USER_TREE* tree ->> Árvore à realizar a busca
+ *      const char* user_name ->> Nome do usuário
+ *  returns:
+ *      USER* ->> Ponteiro para o usuário encontrado (ou NULL caso não)
+ */
+USER* searchUser(USER_TREE* tree, const char* user_name)
 {
-    return searchUserNode(tree, user_id)->user;
+    USER_NODE* user_node =  searchUserNode(tree, user_name);
+    if(user_node != NULL){ return user_node->user; }
+    else { return NULL; }
 }
 
-void removeUser(USER_TREE* tree, const int user_id)
-{
-    USER_NODE* user_node = searchUserNode(tree, user_id);
-    // TODO - Implementar remoção de usuário
-}
+// void removeUser(USER_TREE* tree, const int user_id)
+// {
+//     USER_NODE* user_node = searchUserNode(tree, user_id);
+//     // TODO - Implementar remoção de usuário
+// }
 
-USER_NODE* searchUserNode(USER_TREE* tree, const int user_id)
+/**
+ * Busca o nó de usuário dentro da árvore, e o retorna caso encotrar
+ *  params:
+ *      USER_TREE* tree ->> Árvore a realizar a busca
+ *      const char* user_name ->> Nome do usuário procurado
+ *  returns:
+ *      USER_NODE* ->> Nó da árvore do usuário correspondente
+ */
+USER_NODE* searchUserNode(USER_TREE* tree, const char* user_name)
 {
     USER_NODE* p = tree->root;
     while(p != NULL)
     {
-        if(p->user->id == user_id){ return p->user; }
-        else if(user_id < p->user->id){ p = p->left; }
-        else if(user_id > p->user->id){ p = p->right; }
+        if(strcmp(user_name, p->user->name)){ return p; }
+        else if(strcmp(user_name,p->user->name) < 0){ p = p->left; }
+        else if(strcmp(user_name,p->user->name) > 0){ p = p->right; }
     }
 
     return NULL;
