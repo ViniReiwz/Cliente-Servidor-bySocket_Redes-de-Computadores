@@ -86,3 +86,33 @@ struct sockaddr_in* createSocketAddrIPV4(const int side, const int socketFD)
 
     return sockAddr;
 }
+
+/**
+ * Constrói a mensagem a ser enviada
+ *  params:
+ *      USER* user ->> Usuário que envia a mensagem
+ *      const char* text ->> Mensagem de texto própriamente dita
+ *      const int whisp_to ->> ID do usuário para qual sussurra (-1 para enviar à todos)
+ *  returns:
+ *      MESSAGE* ->> Ponteiro para estrutura MESSAGE que contém a mensagem e o usuário remetente
+ */
+MESSAGE* buildMessage(USER* user, char* text, const int whisp_to)
+{
+    MESSAGE* message = (MESSAGE*)calloc(1,sizeof(MESSAGE));
+    message->user = user;
+    message->message = text;
+    message->to_id = whisp_to;
+
+    return message;
+}
+
+/**
+ * Libera a memória de uma mensagem.
+ *  params:
+ *      MESSAGE* message ->> Mensagem a ser liberada
+ */
+void freeMessage(MESSAGE* message)
+{
+    free(message->message);
+    free(message);
+}

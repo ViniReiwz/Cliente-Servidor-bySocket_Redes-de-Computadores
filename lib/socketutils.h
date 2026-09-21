@@ -4,11 +4,14 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include "userutils.h"
 
 #define CNCT_PORT 8080  // Porta de conexão (cliente e servidor)
 
 #define SRV_SIDE 1      // Constantes auxiliares para definir se o socket é do lado do servidor
 #define CLI_SIDE 2      // ou do cliente
+
+#define MSG_SIZE 1024
 
 /*
     Cria um socket para TCP, o nomeia, faz o bind (no lado do servidor) e retorna seu descritor.
@@ -23,5 +26,7 @@
         NULL caso aja algum erro na criação do mesmo
 */
 struct sockaddr_in* createSocketAddrIPV4(const int side, const int socketFD);
+
+MESSAGE* buildMessage(USER* user, char* text, const int whisp_to);
 
 #endif
