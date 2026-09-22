@@ -1,6 +1,27 @@
 #include "gchat.h"
 
 
+void resolveCommands(MESSAGE* message, USER_TREE* tree)
+{
+    if(strcmp(message->message, "/q") == 0)
+    { 
+        // TODO - Implementar remoção de usuário
+        sprintf(message->message, "O usuário %s saiu da conversa !\0", message->username);
+        sprintf(message->username, "Servidor\0");
+    }
+    else if(strcmp(message->message,"/s") == 0){ message->to_id = -1; }
+    else if(message->message[1] == 'w')
+    {
+        char wName[NAME_SIZE];
+        strtok(message->message, " ");
+        strcpy(wName, strtok(message->message, NULL));
+
+        USER* user = searchUser(tree, wName);
+        if(user == NULL){ strcpy(message->message,"Usuário não encontrado\0"); }
+        else{ message->to_id = user->id; }
+    }
+}
+
 int main()
 {
     // Cria uma socket preparada para o TCP (família AF_INET e do tipo STREAM)
@@ -21,18 +42,25 @@ int main()
     int cliSockFD = accept(srvSockFD, (struct sockaddr*)cliSockAddr, &addrSize);
     printf("\nConexão aceita !\n");
 
+    USER_TREE* tree = createUserTree();
+
     while (1)
     {
-        char buffer[1024];
-        int bytesRec = recv(cliSockFD, buffer, 1023, 0);
-        buffer[bytesRec] = '\0';
-        printf("Mensagem recebida ->> %s\n", buffer);
+        USER* user;
+        MESSAGE* rcv_msg = (MESSAGE*)calloc(1,sizeof(MESSAGE));
+        recv(cliSockFD, rcv_msg, sizeof(*rcv_msg), 0);
 
-        if(strcmp(buffer,"exit") == 0){break;}
-
-        char* response = "Resposta a mensagem de teste !!\0";
-        int bytesSend = send(cliSockFD, response, strlen(response), 0);
-        if(bytesSend == -1){perror("send");}
+        if(rcv_msg->attach_id[0] == 0)
+        {
+            user = createUser(rcv_msg->username);
+            insertUser(tree, user);
+            rcv_msg->attach_id[0] = 1;
+            rcv_msg->attach_id[1] = user->id;
+        }
+        
+        send(cliSockFD, rcv_msg, sizeof(*rcv_msg), 0);
+        free(rcv_msg);
+        
     }
 
     close(cliSockFD);
