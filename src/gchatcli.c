@@ -1,5 +1,26 @@
 #include "gchat.h"
 
+char* getStringInput(const int len)
+{
+    char* text = (char*)calloc(len,sizeof(char));
+    fgets(text, len, stdin);
+    text[strcspn(text,"\n")] = '\0';
+
+    return text;
+}
+
+void printMessage(const MESSAGE* message, const int user_id)
+{
+    if(DEBUG)
+    {
+        printf("Mensagem recebida do servidor ->> \n");
+        printf("\nRemetente: %s\nContéudo: %s\nID do Whisp: %i\n, Attachid[0, 1]: [%i, %i]\n\n", message->username, message->message, message->to_id, message->attach_id[0], message->attach_id[1]);
+    }
+    else if(message->to_id == user_id || (message->to_id == -1 && message->attach_id[1] != user_id))
+    {
+        printf("%s: %s\n", message->username, message->message);
+    }
+}
 
 int main()
 {
@@ -16,23 +37,36 @@ int main()
         return -1;
     }
 
+    printf("Digite seu nome: ");
+    char* user_name = getStringInput(NAME_SIZE);
+    USER* user = createUser(user_name);
+    int whisp_to = -1;
+
     while(1)
     {
-        // Envia uma mensagem teste para saber se a conexão foi feita corretamente.
-        char message[1024];
-        fgets(message, 1023, stdin);
-        message[strcspn(message,"\n")] = '\0';  
-        
-        int bytesSend =  send(cliSockFD, message, strlen(message), 0);
+        fflush(stdin);
+
+        printf("Você diz: ");
+        char* text = getStringInput(MSG_SIZE);
+
+        MESSAGE* snd_msg = buildMessage(user, text, whisp_to);
+
+        free(text);
+
+        int bytesSend =  send(cliSockFD, snd_msg, sizeof(*snd_msg), 0);
         if(bytesSend == -1){perror("send");}
 
-        if(strcmp(message,"exit") == 0){break;}
-
+        free(snd_msg);
 
         // Recebe e exibe a mensagem de resposta teste do servidor
-        char buffer[1024];
-        recv(cliSockFD, buffer, sizeof(buffer),0);
-        printf("Resposta ->> %s\n", buffer);
+        MESSAGE* rcv_msg = (MESSAGE*)calloc(1,sizeof(MESSAGE));
+        recv(cliSockFD, rcv_msg, sizeof(*rcv_msg), 0);
+        
+        if(rcv_msg->attach_id[0] == 1 && user->id == -1){ user->id = rcv_msg->attach_id[1]; }
+        
+        printMessage(rcv_msg, user->id);
+
+        free(rcv_msg);
     }
 
     close(cliSockFD);
