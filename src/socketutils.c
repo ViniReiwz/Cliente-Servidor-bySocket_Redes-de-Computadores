@@ -99,20 +99,11 @@ struct sockaddr_in* createSocketAddrIPV4(const int side, const int socketFD)
 MESSAGE* buildMessage(USER* user, char* text, const int whisp_to)
 {
     MESSAGE* message = (MESSAGE*)calloc(1,sizeof(MESSAGE));
-    message->user = user;
-    message->message = text;
+    strcpy(message->username, user->name);
+    strcpy(message->message, text);
     message->to_id = whisp_to;
+    if(user->id == -1){ message->attach_id[0] = 0; message->attach_id[1] = -1; }
+    else{ message->attach_id[0] = 1; message->attach_id[1] = user->id; }
 
     return message;
-}
-
-/**
- * Libera a memória de uma mensagem.
- *  params:
- *      MESSAGE* message ->> Mensagem a ser liberada
- */
-void freeMessage(MESSAGE* message)
-{
-    free(message->message);
-    free(message);
 }
