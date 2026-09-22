@@ -12,12 +12,14 @@
 #define CLI_SIDE 2      // ou do cliente
 
 #define MSG_SIZE 1024
+#define NAME_SIZE 50
 
 typedef struct _messsage 
 {
-    USER* user;
-    char* message;
-    int to_id;
+    char username[NAME_SIZE];   // Nome do usuário
+    char message[MSG_SIZE];     // Mensagem digitada pelo usuário
+    int to_id;                  // Id do sussuro (-1 para falar para todo o chat)
+    int attach_id[2];           // Estrutura que indica a necessidade de guardar o usuário na árvore, sendo [0,0] caso seja a primeira mensagem do usuário e [1,idUsuario] após a alocação
 }MESSAGE;
 
 /*
@@ -34,6 +36,15 @@ typedef struct _messsage
 */
 struct sockaddr_in* createSocketAddrIPV4(const int side, const int socketFD);
 
+/**
+ * Constrói a mensagem a ser enviada
+ *  params:
+ *      USER* user ->> Usuário que envia a mensagem
+ *      const char* text ->> Mensagem de texto própriamente dita
+ *      const int whisp_to ->> ID do usuário para qual sussurra (-1 para enviar à todos)
+ *  returns:
+ *      MESSAGE* ->> Ponteiro para estrutura MESSAGE que contém a mensagem e o usuário remetente
+ */
 MESSAGE* buildMessage(USER* user, char* text, const int whisp_to);
 
 #endif
