@@ -3,15 +3,16 @@
 /*
  * Cria um usuário
  *   params:
- *       const char name ->> Nome do usuário
+ *       char name ->> Nome do usuário
  *   returns:
  *       USER* ->> Ponteiro para estrutura de usuário com id -1 e nome passado como parâmetro
  */
-USER* createUser(const char* name)
+USER* createUser(char* name)
 {
     USER* user = (USER*)calloc(1,sizeof(USER));
     user->id = -1;
     user->name = (char*)calloc(strlen(name), sizeof(char));
+    user->name = name;
     return user;
 }
 
@@ -159,7 +160,7 @@ USER* searchUser(USER_TREE* tree, const char* user_name)
 {
     USER_NODE* user_node =  searchUserNode(tree, user_name);
     if(user_node != NULL){ return user_node->user; }
-    else { return NULL; }
+    return NULL;
 }
 
 // void removeUser(USER_TREE* tree, const int user_id)
