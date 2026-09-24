@@ -10,43 +10,87 @@
 USER* createUser(char* name)
 {
     USER* user = (USER*)calloc(1,sizeof(USER));
-    user->id = -1;
+    user->id = user->sockID = -1;
     user->name = (char*)calloc(strlen(name), sizeof(char));
     user->name = name;
     return user;
 }
 
 /**
- * Cria um nó de usuário, utilizado para salvá-lo na árvore de usuários
- *  params:
- *      USER* user ->> Usuário a ser salvo
+ * Cria uma lista de usuários
  *  returns:
- *      USER_NODE* ->> Ponteiro para estrutura do tipo USER_NODE (Nó de árvore binária)
+ *  USER_LIST* ->> Ponteiro para estrutura da lista, com head e tail == NULL
+ */
+USER_LIST* createUserList()
+{
+    USER_LIST* list = (USER_LIST*)calloc(1,sizeof(USER_LIST));
+    list->head = list->tail = NULL;
+    return list;
+}
+
+/**
+ * Cria um nó de usuário, estrutura utilizada para armazená-los na lista
+ *  params:
+ *      USER* user ->> Usuário a ser atrelado à um nó.
+ *  returns:
+ *      USER_NODE* ->> Nó de usuário com next e ant == NULL e usuário sendo o ponteiro para USER (passado por parâmetro).
  */
 USER_NODE* createUserNode(USER* user)
 {
-    USER_NODE* user_node = (USER_NODE*)calloc(1,sizeof(USER_NODE));
-    user_node->left = user_node->right = user_node->ant = NULL;
-    user_node->user = user;
+    USER_NODE* usr_node = (USER_NODE*)calloc(1,sizeof(USER_NODE));
+    usr_node->user = user;
+    usr_node->next = usr_node->ant = NULL;
+    return usr_node;
 }
 
 /**
- * Aloca memória para uma árvore binária de nós do tipo USER_NODE (contém o número de usuários 
- * e a raíz da árvore)
- * 
- * returns:
- *  USER_TREE* ->> Ponteiro para a estrutura da árvore binária, com raiz NULL e num_users 0
+ * Insere o usuário na lista
+ *  params:
+ *      USER_LIST* list ->> Lista de usuários
+ *      USER* user ->> Usuário a ser inserido
  */
-USER_TREE* createUserTree()
+void insertUser(USER_LIST* list, USER* user)
 {
-    USER_TREE* tree = (USER_TREE*)calloc(1,sizeof(USER_TREE));
-    tree->root = NULL;
-    tree->num_users = 0;
-
-    return tree;
+    USER_NODE* usr_node = createUserNode(user);
+    if(list->head == NULL)
+    {
+        list->head = list->tail = usr_node;
+    }
+    else
+    {
+        list->tail->next = usr_node;
+        usr_node->ant = list->tail;
+        list->tail = usr_node;
+    }
 }
 
 /**
+ * Remove um usuário de uma lista de usuários
+ *  params:
+ *      USER_LIST* list ->> Lista em que o usuário está
+ *      USER* user ->> Usuário a ser removido
+ */
+void removeUser(USER_LIST* list, USER* user)
+{
+    USER_NODE* p = list->head;
+    while(p!=NULL)
+    {
+        if(p->user->id == user->id) 
+        { 
+            USER_NODE* ant = p->ant;
+            if(ant == NULL){ list->head = p->next; }
+            else{ ant->next = p->next; }
+            if(p->next == NULL) { list->tail == p->ant; }
+            else{ p->next->ant = ant; }
+
+            return;
+        }
+        p = p->next;
+    }
+}
+
+/**
+ * 
  * Libera a memória alocada para um usuário
  *  params:
  *      USER* user ->> Usuário a ser 'deletado'
@@ -58,113 +102,65 @@ void destroyUser(USER* user)
 }
 
 /**
- * Libera a memória de toda uma árvore de usuários
+ * Libera a memória de um user node.
  *  params:
- *      USER_NONDE* root ->> Raíz da árvore
+ *      USER_NODE* usr_node ->> Nó a ser liberado
  */
-void destroyTree(USER_NODE* root)
+void destroyUserNode(USER_NODE* usr_node)
 {
-    if(root == NULL){return;}
-
-    destroyTree(root->left);
-    destroyTree(root->right);
-
-    destroyUser(root->user);
-    free(root);
+    destroyUser(usr_node->user);
+    free(usr_node);
 }
 
 /**
- * Insere um usuário na árvore de usuários
+ * Procura um usuário  na lista pelo seu id
  *  params:
- *      USER_TREE* tree ->> Árvore em que o usuário será inserido
- *      USER* user ->> Usuário a ser inserido
- */
-void insertUser(USER_TREE* tree, USER* user)
-{
-    if(tree->root == NULL)
-    {
-        tree->root = createUserNode(user);
-    }
-    else
-    {
-        USER_NODE* p = tree->root;
-        USER_NODE* ant = NULL;
-        int wasLeft = 0;
-        while(p!=NULL)
-        {
-            ant = p;
-            if(strcmp(user->name,p->user->name) < 0)
-            {
-                p = p->left;
-                wasLeft = 1;
-            }
-            else if(strcmp(user->name,p->user->name) > 0)
-            {
-                p = p->right;
-                wasLeft = 0;
-            }
-            else
-            {
-                printf("Usuário já cadastrado !\n");
-                return;
-            }
-        }
-        switch (wasLeft)
-        {
-        case 1:
-            {
-                ant->left = createUserNode(user);
-                break;
-            }
-        case 0:
-            {
-                ant->right = createUserNode(user);
-                break;
-            }
-        }
-    }
-    tree->num_users++;
-    user->id = tree->num_users - 1;
-}
-
-/**
- * Busca o nó de usuário dentro da árvore, e o retorna caso encotrar
- *  params:
- *      USER_TREE* tree ->> Árvore a realizar a busca
- *      const char* user_name ->> Nome do usuário procurado
+ *      USER_LIST* list ->> Lista em que o usuário se encontra
+ *      int id ->> Id do usuário desejado
  *  returns:
- *      USER_NODE* ->> Nó da árvore do usuário correspondente
+ *      USER* ->> Usuário encontrado | NULL (em caso de não encontrar na lista)
  */
-USER_NODE* searchUserNode(USER_TREE* tree, const char* user_name)
+USER* searchUserByID(USER_LIST* list, int id)
 {
-    USER_NODE* p = tree->root;
-    while(p != NULL)
-    {
-        if(strcmp(user_name, p->user->name)){ return p; }
-        else if(strcmp(user_name,p->user->name) < 0){ p = p->left; }
-        else if(strcmp(user_name,p->user->name) > 0){ p = p->right; }
-    }
-
+    USER_NODE* p = list->head;
+    while(p != NULL){ if(p->user->id == id){ return p->user; } p = p->next; }
     return NULL;
+    
 }
 
 /**
  * Procura um usuário por seu nome
  *  params:
- *      USER_TREE* tree ->> Árvore à realizar a busca
- *      const char* user_name ->> Nome do usuário
+ *      USER_LIST* list ->> Lista em que o usuário se encontra
+ *      const char name ->> Nome do usuário a ser procurado
  *  returns:
- *      USER* ->> Ponteiro para o usuário encontrado (ou NULL caso não)
+ *      USER* ->> Usuário encontrado | NULL (em caso de não encontrar na lista)
  */
-USER* searchUser(USER_TREE* tree, const char* user_name)
+USER* searchUserByName(USER_LIST* list, const char* name)
 {
-    USER_NODE* user_node =  searchUserNode(tree, user_name);
-    if(user_node != NULL){ return user_node->user; }
+    USER_NODE* p = list->head;
+    while(p != NULL)
+    { 
+        if(strcmp(p->user->name, name) == 0)
+        { 
+            return p->user; 
+        } 
+        p = p->next; 
+    }
     return NULL;
 }
 
-// void removeUser(USER_TREE* tree, const int user_id)
-// {
-//     USER_NODE* user_node = searchUserNode(tree, user_id);
-//     // TODO - Implementar remoção de usuário
-// }
+/**
+ * Exibe os dados do usuário
+ *  params:
+ *      USER* user ->> Usuário a ter dados exibidos
+ */
+void printUserData(USER* user)
+{
+    puts("Usuário:");
+    puts("------------------");
+    printf("Nome ->> %s\n", user->name);
+    printf("ID ->> %i\n", user->id);
+    printf("Socket ->> %i\n", user->sockID);
+    puts("------------------");
+}

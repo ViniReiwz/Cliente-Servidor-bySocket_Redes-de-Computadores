@@ -1,71 +1,89 @@
 #ifndef USER_UTILS
 #define USER_UTILS
 
+#include "gchat.h"
+
 // Estrutura que define um usuário no chat em grupo
 typedef struct _user 
 {
     char* name; // Nome do usuário
     int id;     // Id do usuário
+    int sockID  // ID do socket do usuário
 }USER;
 
-
-// Estrutura que define um node usuário para a árvore que os 'armazenará'
+// Estrutura que define o nó de um usuário na lista que os armazena
 typedef struct _user_node
 {
     USER* user;                 // Usuário
-    struct _user_node* left;    // Filho da esquerda
-    struct _user_node* right;   // Filho da direita
-    struct _user_node* ant;     // Nó pai
-}USER_NODE;
+    struct _user_node* next;    // Próximo nó
+    struct _user_node* ant;     // Nó anterior
+}USER_NODE; 
 
-// Estrutura que define uma árvore de usuários
-typedef struct _user_tree
+// Estrutura auxiliar que representa uma lista de usuários
+typedef struct _user_list
 {
-    USER_NODE* root;    // Raíz da árvore
-    int num_users;      // Número de usuários já armazenados
-}USER_TREE;
+    USER_NODE* head;            // Cabeça da lista
+    USER_NODE* tail;            // Cauda da lista
+}USER_LIST;
+
 
 /*
  * Cria um usuário
  *   params:
- *       char name ->> Nome do usuário
+ *       char* name ->> Nome do usuário
  *   returns:
  *       USER* ->> Ponteiro para estrutura de usuário com id -1 e nome passado como parâmetro
  */
 USER* createUser(char* name);
 
 /**
- * Aloca memória para uma árvore binária de nós do tipo USER_NODE (contém o número de usuários 
- * e a raíz da árvore)
- * 
- * returns:
- *  USER_TREE* ->> Ponteiro para a estrutura da árvore binária, com raiz NULL e num_users 0
+ * Cria uma lista de usuários
+ *  returns:
+ *  USER_LIST* ->> Ponteiro para estrutura da lista, com head e tail == NULL
  */
-USER_TREE* createUserTree();
+USER_LIST* createUserList();
 
 /**
- * Insere um usuário na árvore de usuários
+ * Insere o usuário na lista
  *  params:
- *      USER_TREE* tree ->> Árvore em que o usuário será inserido
+ *      USER_LIST* list ->> Lista de usuários
  *      USER* user ->> Usuário a ser inserido
  */
-void insertUser(USER_TREE* tree, USER* user);
+void insertUser(USER_LIST* list, USER* user);
+
+/**
+ * Remove um usuário de uma lista de usuários
+ *  params:
+ *      USER_LIST* list ->> Lista em que o usuário está
+ *      USER* user ->> Usuário a ser removido
+ */
+void removeUser(USER_LIST* list, USER* user);
+
+/**
+ * Procura um usuário  na lista pelo seu id
+ *  params:
+ *      USER_LIST* list ->> Lista em que o usuário se encontra
+ *      int id ->> Id do usuário desejado
+ *  returns:
+ *      USER* ->> Usuário encontrado | NULL (em caso de não encontrar na lista)
+ */
+USER* searchUserByID(USER_LIST* list, int id);
 
 /**
  * Procura um usuário por seu nome
  *  params:
- *      USER_TREE* tree ->> Árvore à realizar a busca
- *      const char* user_name ->> Nome do usuário
+ *      USER_LIST* list ->> Lista em que o usuário se encontra
+ *      const char name ->> Nome do usuário a ser procurado
  *  returns:
- *      USER* ->> Ponteiro para o usuário encontrado (ou NULL caso não)
+ *      USER* ->> Usuário encontrado | NULL (em caso de não encontrar na lista)
  */
-USER* searchUser(USER_TREE* tree, const char* user_name);
+USER* searchUserByName(USER_LIST* list, const char* name);
 
 /**
- * Libera a memória de toda uma árvore de usuários
+ * Exibe os dados do usuário
  *  params:
- *      USER_NONDE* root ->> Raíz da árvore
+ *      USER* user ->> Usuário a ter dados exibidos
  */
-void destroyTree(USER_NODE* root);
+void printUserData(USER* user);
 
 #endif
