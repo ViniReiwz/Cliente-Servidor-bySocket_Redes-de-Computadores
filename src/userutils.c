@@ -3,17 +3,25 @@
 /*
  * Cria um usuário
  *   params:
- *       char name ->> Nome do usuário
+ *      const char name ->> Nome do usuário
  *   returns:
- *       USER* ->> Ponteiro para estrutura de usuário com id -1 e nome passado como parâmetro
+ *      USER* ->> Ponteiro para estrutura de usuário com id -1 e nome passado como parâmetro
  */
-USER* createUser(char* name)
+USER* createUser(const char* name)
 {
     USER* user = (USER*)calloc(1,sizeof(USER));
-    user->id = user->sockID = -1;
-    user->name = (char*)calloc(strlen(name), sizeof(char));
-    user->name = name;
+    user->id = user->sockFD = -1;
+    strcpy(user->name, name);
     return user;
+}
+
+USER* copyUser(USER* user)
+{
+    USER* copy = (USER*)calloc(1,sizeof(USER));
+    copy->id = user->id;
+    strcpy(copy->name,user->name);
+    copy->sockFD = user->sockFD;
+    return copy;
 }
 
 /**
@@ -25,6 +33,7 @@ USER_LIST* createUserList()
 {
     USER_LIST* list = (USER_LIST*)calloc(1,sizeof(USER_LIST));
     list->head = list->tail = NULL;
+    list->num_users = 0;
     return list;
 }
 
@@ -38,7 +47,7 @@ USER_LIST* createUserList()
 USER_NODE* createUserNode(USER* user)
 {
     USER_NODE* usr_node = (USER_NODE*)calloc(1,sizeof(USER_NODE));
-    usr_node->user = user;
+    usr_node->user = copyUser(user);
     usr_node->next = usr_node->ant = NULL;
     return usr_node;
 }
@@ -51,6 +60,8 @@ USER_NODE* createUserNode(USER* user)
  */
 void insertUser(USER_LIST* list, USER* user)
 {
+    list->num_users++;
+    user->id = list->num_users - 1;
     USER_NODE* usr_node = createUserNode(user);
     if(list->head == NULL)
     {
@@ -80,7 +91,7 @@ void removeUser(USER_LIST* list, USER* user)
             USER_NODE* ant = p->ant;
             if(ant == NULL){ list->head = p->next; }
             else{ ant->next = p->next; }
-            if(p->next == NULL) { list->tail == p->ant; }
+            if(p->next == NULL) { list->tail = p->ant; }
             else{ p->next->ant = ant; }
 
             return;
@@ -157,10 +168,21 @@ USER* searchUserByName(USER_LIST* list, const char* name)
  */
 void printUserData(USER* user)
 {
-    puts("Usuário:");
     puts("------------------");
+    printf("ID ->> %i:\n", user->id);
     printf("Nome ->> %s\n", user->name);
-    printf("ID ->> %i\n", user->id);
-    printf("Socket ->> %i\n", user->sockID);
+    printf("Socket ->> %i\n", user->sockFD);
     puts("------------------");
+}
+
+void printListData(USER_LIST* list)
+{
+    USER_NODE* p = list->head;
+    printf("==== Lista de usuários ====\n\n");
+    while(p != NULL)
+    {
+        printUserData(p->user);
+        p = p->next;
+    }
+    printf("\n==== Fim da lista ====");
 }

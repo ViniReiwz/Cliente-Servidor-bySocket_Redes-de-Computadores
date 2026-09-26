@@ -16,11 +16,18 @@
 
 typedef struct _messsage 
 {
-    char username[NAME_SIZE];   // Nome do usuário
+    USER sender;                // Usuário que enviou a mensagem
     char message[MSG_SIZE];     // Mensagem digitada pelo usuário
     int to_id;                  // Id do sussuro (-1 para falar para todo o chat)
-    int attach_id[2];           // Estrutura que indica a necessidade de guardar o usuário na árvore, sendo [0,0] caso seja a primeira mensagem do usuário e [1,idUsuario] após a alocação
 }MESSAGE;
+
+typedef struct _accepted_socket
+{
+    int sockFD;
+    struct sockaddr_in* sockAddr;
+    int wasAccpeted;
+    int error;
+}ACCEPTED_SOCKET;
 
 /*
     Cria um socket para TCP, o nomeia, faz o bind (no lado do servidor) e retorna seu descritor.
@@ -47,4 +54,7 @@ struct sockaddr_in* createSocketAddrIPV4(const int side, const int socketFD);
  */
 MESSAGE* buildMessage(USER* user, char* text, const int whisp_to);
 
+ACCEPTED_SOCKET* accpetIncomingConnection(int srvSockFD);
+
+void destroyAcptSock(ACCEPTED_SOCKET* acpt_sock);
 #endif
