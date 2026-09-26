@@ -3,7 +3,9 @@ OBJ = ./obj
 BIN = ./bin
 LIB = ./lib
 
-.PHONY: all create_dirs lib bin run-srv run-cli clean
+CFLAGS = -g -Wall -Wextra -I $(LIB)
+
+.PHONY: all create_dirs lib bin run-srv run-cli clean debug-srv debug-cli
 
 all: bin
 
@@ -12,18 +14,24 @@ create_dirs:
 	mkdir -p $(BIN)
 
 lib: create_dirs
-	gcc -c $(SRC)/socketutils.c -I $(LIB) -o $(OBJ)/socketutils.o
-	gcc -c $(SRC)/userutils.c -I $(LIB) -o $(OBJ)/userutils.o
+	gcc $(CFLAGS) -c $(SRC)/socketutils.c -o $(OBJ)/socketutils.o
+	gcc $(CFLAGS) -c $(SRC)/userutils.c -o $(OBJ)/userutils.o
 
 bin: lib
-	gcc $(SRC)/gchatsrv.c $(OBJ)/*.o -I $(LIB) -o $(BIN)/gchatsrv
-	gcc $(SRC)/gchatcli.c $(OBJ)/*.o -I $(LIB) -o $(BIN)/gchatcli
+	gcc $(CFLAGS) $(SRC)/gchatsrv.c $(OBJ)/*.o -o $(BIN)/gchatsrv
+	gcc $(CFLAGS) $(SRC)/gchatcli.c $(OBJ)/*.o -o $(BIN)/gchatcli
 
 run-srv:
 	$(BIN)/gchatsrv
 
 run-cli:
 	$(BIN)/gchatcli
+
+debug-srv:
+	gdb $(BIN)/gchatsrv
+
+debug-cli:
+	gdb $(BIN)/gchatcli
 
 clean: 
 	rm -f $(BIN)/*
