@@ -3,13 +3,14 @@
 
 #include "gchat.h"
 
+// Definições de tipo =======================================================================================
 
 // Estrutura que define um usuário no chat em grupo
 typedef struct _user 
 {
-    char name[50]; // Nome do usuário
-    int id;     // Id do usuário
-    int sockFD  // FD do socket do usuário
+    char name[NAME_SIZE];   // Nome do usuário
+    int id;                 // Id do usuário
+    int sockFD;             // FD do socket do usuário
 }USER;
 
 // Estrutura que define o nó de um usuário na lista que os armazena
@@ -25,9 +26,13 @@ typedef struct _user_list
 {
     USER_NODE* head;            // Cabeça da lista
     USER_NODE* tail;            // Cauda da lista
-    int num_users;
+    int num_users;              // Número de usuários na lista
+    pthread_mutex_t mutex;      // Mutex para corrigir condições de corrida dentro da lista
 }USER_LIST;
 
+// ==========================================================================================================
+
+// Funções ==================================================================================================
 
 /*
  * Cria um usuário
@@ -81,14 +86,6 @@ USER* searchUserByID(USER_LIST* list, int id);
  */
 USER* searchUserByName(USER_LIST* list, const char* name);
 
-/**
- * Exibe os dados do usuário
- *  params:
- *      USER* user ->> Usuário a ter dados exibidos
- */
-void printUserData(USER* user);
-
-void printListData(USER_LIST* list);
-
+// ==========================================================================================================
 
 #endif

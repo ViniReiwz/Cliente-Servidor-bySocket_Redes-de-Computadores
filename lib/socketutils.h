@@ -6,28 +6,29 @@
 #include <arpa/inet.h>
 #include "userutils.h"
 
-#define CNCT_PORT 8080  // Porta de conexão (cliente e servidor)
+// Definições de tipos ======================================================================================
 
-#define SRV_SIDE 1      // Constantes auxiliares para definir se o socket é do lado do servidor
-#define CLI_SIDE 2      // ou do cliente
-
-#define MSG_SIZE 1024
-#define NAME_SIZE 50
-
+// Estrutura que define as mensagens trocadas entre cliente e servidor
 typedef struct _messsage 
 {
     USER sender;                // Usuário que enviou a mensagem
     char message[MSG_SIZE];     // Mensagem digitada pelo usuário
     int to_id;                  // Id do sussuro (-1 para falar para todo o chat)
+    int comm;                   // Campo auxiliar que indica o comando a ser realizado pelo cliente
 }MESSAGE;
 
+// Estrutura que define informações importantes para um socket de conexão aceita
 typedef struct _accepted_socket
 {
-    int sockFD;
-    struct sockaddr_in* sockAddr;
-    int wasAccpeted;
-    int error;
+    int sockFD;                     // Descritor do socket
+    struct sockaddr_in* sockAddr;   // Endereço do socket
+    int wasAccpeted;                // Campo que indica se foi aceito ou não
+    int error;                      // Erro de conexão (caso tenha)
 }ACCEPTED_SOCKET;
+
+// ==========================================================================================================
+
+// Funções ==================================================================================================
 
 /*
     Cria um socket para TCP, o nomeia, faz o bind (no lado do servidor) e retorna seu descritor.
@@ -54,7 +55,44 @@ struct sockaddr_in* createSocketAddrIPV4(const int side, const int socketFD);
  */
 MESSAGE* buildMessage(USER* user, char* text, const int whisp_to);
 
+/**
+ * Aceita uma conexão no servidor
+ *  params:
+ *      int srvSockFD ->> Descritor do socket do servidor
+ *  returns:
+ *      ACCEPTERD_SOCKET* ->> Estrutura com todas as informações relevantes do socket aceito.
+ */
 ACCEPTED_SOCKET* accpetIncomingConnection(int srvSockFD);
 
+/**
+ * Libera a memória de um socket aceito e o fecha
+ *  params:
+ *      ACCCEPTED_SOCKET* acpt_sock ->> Socket a ser liberado
+ */
 void destroyAcptSock(ACCEPTED_SOCKET* acpt_sock);
+
+/**
+ * Recebe toda a mensagem
+ *  params:
+ *      int sockFD ->> Descritor do socket que envia a mensagem
+ *      void* buffer ->> Buffer onde a mensagem deve ser armazenada
+ *      size_t size ->> Tamanho da mensagem
+ *  returns:
+ *      size_t ->> Total de bytes recebidos
+ */
+size_t recvAll(int sockFD, void* buffer, size_t size);
+
+/**
+ * Recebe toda a mensagem
+ *  params:
+ *      int sockFD ->> Descritor do socket que envia a mensagem
+ *      void* buffer ->> Buffer onde a mensagem deve ser armazenada
+ *      size_t size ->> Tamanho da mensagem
+ *  returns:
+ *      size_t ->> Total de bytes recebidos
+ */
+size_t sendAll(int sockFD, void* buffer, size_t size);
+
+// ==========================================================================================================
+
 #endif

@@ -9,10 +9,21 @@
 */
 char* inputServerIP()
 {
+    int valid = 0;
+    
     char* srv_ip = (char*)calloc(INET_ADDRSTRLEN,sizeof(char));
-    fgets(srv_ip, INET_ADDRSTRLEN, stdin);
-    srv_ip[strcspn(srv_ip,"\n")] = '\0';
-    if(DEBUG){printf("IP registrado: \n\n%s\n\n", srv_ip);}
+
+    while(!valid)
+    {
+        fgets(srv_ip, INET_ADDRSTRLEN, stdin);
+        srv_ip[strcspn(srv_ip,"\n")] = '\0';
+
+        if(DEBUG){printf("IP registrado: \n\n%s\n\n", srv_ip);}
+
+        // Verifica se está no formato mínimo "XXX.X.X.X"
+        if(strlen(srv_ip) < 9){ printf("Escreva um endereço válido !\n"); }
+        else { valid = 1; }
+    }
 
     return srv_ip;
 }
@@ -46,7 +57,7 @@ struct sockaddr_in* createSocketAddrIPV4(const int side, const int socketFD)
     
     switch (side)
     {
-        case SRV_SIDE:
+        case SRV_SIDE:  // DO lado do servidor, aloca o endereço e faz o bind
         {
             sockAddr->sin_addr.s_addr = htonl(INADDR_ANY);
 
@@ -61,7 +72,7 @@ struct sockaddr_in* createSocketAddrIPV4(const int side, const int socketFD)
             break;
         }
         
-        case CLI_SIDE:
+        case CLI_SIDE:  // Do lado do cliente, instância o socket indicando à qual server se conectar
         {
             printf("Digite o IP do servidor: ");
             char* srv_ip = inputServerIP();
@@ -88,6 +99,43 @@ struct sockaddr_in* createSocketAddrIPV4(const int side, const int socketFD)
 }
 
 /**
+ * Aceita uma conexão no servidor
+ *  params:
+ *      int srvSockFD ->> Descritor do socket do servidor
+ *  returns:
+ *      ACCEPTERD_SOCKET* ->> Estrutura com todas as informações relevantes do socket aceito.
+ */
+ACCEPTED_SOCKET* accpetIncomingConnection(int srvSockFD)
+{
+    struct sockaddr_in* cliSockAddr = (struct sockaddr_in*)calloc(1,sizeof(struct sockaddr_in));
+    int addrSize = sizeof(struct sockaddr);
+
+    // Aceita a conexão do cliente
+    int cliSockFD = accept(srvSockFD, (struct sockaddr*)cliSockAddr, (socklen_t*)&addrSize);
+
+    // Monta a estrutura de  um socket aceito com todas as informações necessárias
+    ACCEPTED_SOCKET* acpt_sock = (ACCEPTED_SOCKET*)calloc(1,sizeof(ACCEPTED_SOCKET));
+    acpt_sock->sockFD = cliSockFD;
+    acpt_sock->sockAddr = cliSockAddr;
+    acpt_sock->wasAccpeted = cliSockFD > 0;
+    if(!acpt_sock->wasAccpeted){ acpt_sock->error = cliSockFD; }
+
+    return acpt_sock;
+}
+
+/**
+ * Libera a memória de um socket aceito e o fecha
+ *  params:
+ *      ACCCEPTED_SOCKET* acpt_sock ->> Socket a ser liberado
+ */
+void destroyAcptSock(ACCEPTED_SOCKET* acpt_sock)
+{
+    close(acpt_sock->sockFD);
+    free(acpt_sock->sockAddr);
+    free(acpt_sock);
+}
+
+/**
  * Constrói a mensagem a ser enviada
  *  params:
  *      USER* user ->> Usuário que envia a mensagem
@@ -99,11 +147,61 @@ struct sockaddr_in* createSocketAddrIPV4(const int side, const int socketFD)
 MESSAGE* buildMessage(USER* user, char* text, const int whisp_to)
 {
     MESSAGE* message = (MESSAGE*)calloc(1,sizeof(MESSAGE));
-    strcpy(message->username, user->name);
+
+    message->sender.id = user->id;
+    strcpy(message->sender.name, user->name);
+    message->sender.sockFD = user->sockFD;
     strcpy(message->message, text);
     message->to_id = whisp_to;
-    if(user->id == -1){ message->attach_id[0] = 0; message->attach_id[1] = -1; }
-    else{ message->attach_id[0] = 1; message->attach_id[1] = user->id; }
+    message->comm = NONE_COMM;
 
     return message;
+}
+
+/**
+ * Recebe toda a mensagem
+ *  params:
+ *      int sockFD ->> Descritor do socket que envia a mensagem
+ *      void* buffer ->> Buffer onde a mensagem deve ser armazenada
+ *      size_t size ->> Tamanho da mensagem
+ *  returns:
+ *      size_t ->> Total de bytes recebidos
+ */
+size_t recvAll(int sockFD, void* buffer, size_t size)
+{
+    size_t total = 0;
+    while(total < size)
+    {
+        ssize_t bytes = recv(sockFD, (char*)buffer + total, size - total, 0);
+        if(bytes == 0){ return 0; }
+        if (bytes < 0){ perror("recv"); return -1; }
+
+        total += bytes;
+    }
+
+    return total;
+}
+
+/**
+ * Recebe toda a mensagem
+ *  params:
+ *      int sockFD ->> Descritor do socket que envia a mensagem
+ *      void* buffer ->> Buffer onde a mensagem deve ser armazenada
+ *      size_t size ->> Tamanho da mensagem
+ *  returns:
+ *      size_t ->> Total de bytes recebidos
+ */
+size_t sendAll(int sockFD, void* buffer, size_t size)
+{
+    size_t total = 0;
+    while(total < size)
+    {
+        ssize_t bytes = send(sockFD, (char*)buffer + total, size - total, 0);
+        if(DEBUG) { printf("Bytes enviados nesse send\n: %li", bytes); }
+        if (bytes <= 0){ perror("send"); return -1; }
+
+        total += bytes;
+    }
+
+    return total;
 }

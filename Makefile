@@ -16,6 +16,9 @@ create_dirs:
 lib: create_dirs
 	gcc $(CFLAGS) -c $(SRC)/socketutils.c -o $(OBJ)/socketutils.o
 	gcc $(CFLAGS) -c $(SRC)/userutils.c -o $(OBJ)/userutils.o
+	gcc $(CFLAGS) -c $(SRC)/generalutils.c -o $(OBJ)/generalutils.o
+	gcc $(CFLAGS) -c $(SRC)/srvutils.c -o $(OBJ)/srvutils.o
+	gcc $(CFLAGS) -c $(SRC)/cliutils.c -o $(OBJ)/cliutils.o
 
 bin: lib
 	gcc $(CFLAGS) $(SRC)/gchatsrv.c $(OBJ)/*.o -o $(BIN)/gchatsrv
@@ -32,6 +35,12 @@ debug-srv:
 
 debug-cli:
 	gdb $(BIN)/gchatcli
+
+valgrind-srv:
+	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes $(BIN)/gchatsrv
+
+valgrind-cli:
+	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes $(BIN)/gchatcli
 
 clean: 
 	rm -f $(BIN)/*

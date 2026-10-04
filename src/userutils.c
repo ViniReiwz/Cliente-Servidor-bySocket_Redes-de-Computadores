@@ -15,6 +15,13 @@ USER* createUser(const char* name)
     return user;
 }
 
+/**
+ * Copia um usuário, gerando um novo ponteiro com os mesmos dados.
+ *  params:
+ *      USER* user ->> Usuário a ser copiado.
+ *  returns:
+ *      USER* ->> Cópia do usuário referenciado.
+ */
 USER* copyUser(USER* user)
 {
     USER* copy = (USER*)calloc(1,sizeof(USER));
@@ -34,6 +41,7 @@ USER_LIST* createUserList()
     USER_LIST* list = (USER_LIST*)calloc(1,sizeof(USER_LIST));
     list->head = list->tail = NULL;
     list->num_users = 0;
+    pthread_mutex_init(&list->mutex, NULL);
     return list;
 }
 
@@ -47,9 +55,23 @@ USER_LIST* createUserList()
 USER_NODE* createUserNode(USER* user)
 {
     USER_NODE* usr_node = (USER_NODE*)calloc(1,sizeof(USER_NODE));
-    usr_node->user = copyUser(user);
+
+    // Copia um usuário porque no contexto do servidor todos os usuários vem das mensagens, que são constatemente liberadas.
+    usr_node->user = copyUser(user);    
     usr_node->next = usr_node->ant = NULL;
     return usr_node;
+}
+
+
+/**
+ * Libera a memória de um user node.
+ *  params:
+ *      USER_NODE* usr_node ->> Nó a ser liberado
+ */
+void destroyUserNode(USER_NODE* usr_node)
+{
+    free(usr_node->user);
+    free(usr_node);
 }
 
 /**
@@ -60,6 +82,9 @@ USER_NODE* createUserNode(USER* user)
  */
 void insertUser(USER_LIST* list, USER* user)
 {
+    pthread_mutex_t* mutex = &list->mutex;
+    pthread_mutex_lock(mutex);
+
     list->num_users++;
     user->id = list->num_users - 1;
     USER_NODE* usr_node = createUserNode(user);
@@ -73,6 +98,8 @@ void insertUser(USER_LIST* list, USER* user)
         usr_node->ant = list->tail;
         list->tail = usr_node;
     }
+
+    pthread_mutex_unlock(mutex);
 }
 
 /**
@@ -83,44 +110,43 @@ void insertUser(USER_LIST* list, USER* user)
  */
 void removeUser(USER_LIST* list, USER* user)
 {
+    pthread_mutex_t* mutex = &list->mutex;
+    pthread_mutex_lock(mutex);
+
     USER_NODE* p = list->head;
     while(p!=NULL)
     {
         if(p->user->id == user->id) 
         { 
-            USER_NODE* ant = p->ant;
-            if(ant == NULL){ list->head = p->next; }
-            else{ ant->next = p->next; }
-            if(p->next == NULL) { list->tail = p->ant; }
-            else{ p->next->ant = ant; }
+            if(list->head == list->tail)
+            {
+                list->head = list->tail = NULL;
+            }
+            else if(p->ant == NULL)
+            {
+                p->next->ant = NULL;
+                list->head = p->next;
+            }
+            else if(p->next == NULL)
+            {
+                p->ant->next = NULL;
+                list->tail = p->ant;
+            }
+            else
+            {
+                USER_NODE* ant = p->ant;
+                ant->next = p->next;
+                p->next->ant = ant;
+            }
 
-            return;
+            destroyUserNode(p);
+
+            break;  
         }
         p = p->next;
     }
-}
-
-/**
- * 
- * Libera a memória alocada para um usuário
- *  params:
- *      USER* user ->> Usuário a ser 'deletado'
- */
-void destroyUser(USER* user)
-{
-    free(user->name);
-    free(user);
-}
-
-/**
- * Libera a memória de um user node.
- *  params:
- *      USER_NODE* usr_node ->> Nó a ser liberado
- */
-void destroyUserNode(USER_NODE* usr_node)
-{
-    destroyUser(usr_node->user);
-    free(usr_node);
+    list->num_users--;
+    pthread_mutex_unlock(mutex);
 }
 
 /**
@@ -133,10 +159,21 @@ void destroyUserNode(USER_NODE* usr_node)
  */
 USER* searchUserByID(USER_LIST* list, int id)
 {
+    pthread_mutex_t* mutex = &list->mutex;
+    pthread_mutex_lock(mutex);
+
     USER_NODE* p = list->head;
-    while(p != NULL){ if(p->user->id == id){ return p->user; } p = p->next; }
+    while(p != NULL)
+    { 
+        if(p->user->id == id)
+        { 
+            pthread_mutex_unlock(mutex);
+            return p->user; 
+        } 
+        p = p->next; 
+    }
+    pthread_mutex_unlock(mutex);
     return NULL;
-    
 }
 
 /**
@@ -149,40 +186,19 @@ USER* searchUserByID(USER_LIST* list, int id)
  */
 USER* searchUserByName(USER_LIST* list, const char* name)
 {
+    pthread_mutex_t* mutex = &list->mutex;
+    pthread_mutex_lock(mutex);
+
     USER_NODE* p = list->head;
     while(p != NULL)
     { 
         if(strcmp(p->user->name, name) == 0)
         { 
+            pthread_mutex_unlock(mutex);
             return p->user; 
         } 
         p = p->next; 
     }
+    pthread_mutex_unlock(mutex);
     return NULL;
-}
-
-/**
- * Exibe os dados do usuário
- *  params:
- *      USER* user ->> Usuário a ter dados exibidos
- */
-void printUserData(USER* user)
-{
-    puts("------------------");
-    printf("ID ->> %i:\n", user->id);
-    printf("Nome ->> %s\n", user->name);
-    printf("Socket ->> %i\n", user->sockFD);
-    puts("------------------");
-}
-
-void printListData(USER_LIST* list)
-{
-    USER_NODE* p = list->head;
-    printf("==== Lista de usuários ====\n\n");
-    while(p != NULL)
-    {
-        printUserData(p->user);
-        p = p->next;
-    }
-    printf("\n==== Fim da lista ====");
 }
